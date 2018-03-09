@@ -206,12 +206,3 @@ class Signboard:
 		self.print_msg("                    ",1,"static")
 		self.print_msg("                    ",2,"static")
 		return True
-
-# testing class functions
-sb = Signboard("/dev/ttyUSB0")
-sb.connect()
-sb.clear()
-sb.set_font(5)
-sb.print_msg('Vorne signboard.',1,type="static")
-sb.print_msg('python test.',2,type="scroll")
-
