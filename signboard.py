@@ -23,8 +23,8 @@ Create a new instance with the Signboard Port
 # Define Defaults, validate defaults against user settings
 #
 
-DRYRUN = True
-
+#DRYRUN = True
+DRYRUN = False
 class Signboard:
 
 
@@ -71,7 +71,7 @@ class Signboard:
 		if i > 3:
 			print("Error: invalid scroll rate: %s" % (i))
 		else:
-			set self.scroll_rate = i
+			self.scroll_rate = i
 
 	def set_scroll_repeat(self, i):
 		"""
@@ -84,7 +84,7 @@ class Signboard:
 		if i > 3:
 			print("Error: invalid scroll repeat: %s" % (i))
 		else:
-			set self.scroll_repeat = i
+			self.scroll_repeat = i
 
 	def set_hue(self,f=0,b=0):
 		"""
@@ -150,32 +150,15 @@ class Signboard:
 		input: str
 		"""
 
-		output = s.encode('ascii')
-
-		if len(output) <= self.messagelimit:
+		if len(s) <= self.messagelimit:
 			if DRYRUN:
-				print("%s" % (output))
+				print("%s" % (s))
 			else:
-				self.serialport.write('%s' % (output))
+				self.serialport.write(b'%s' % (s.encode('ascii')))
 				return True
 		else:
 			print("Error: Message exceed char limit of %s" % (self.messagelimit))
 			return False
-
-	def scroll_msg(self, s, l):
-		"""
-		scrolls a message: s across line: l
-		"""
-		if l > self.linelimit:
-			print("Error: max line limit is %s" % (self.linelimit))
-			return False
-		if len(s) > 20:
-			print("Error: message exceeds the character limit of %s" % (self.charlimit))
-			return False
-
-		message = "\x1b 24A \x1b%s S %s \r" % (l,s)
-		self._write(message)
-
 
 	def print_msg(self, s, l, type="static"):
 		"""
@@ -191,11 +174,14 @@ class Signboard:
 		type = "static" - display a static 20character message
 		type = "scroll" - scrolls a larger message (up to 256 characters including control codes)
 		"""
+
+		# check to see if we're requesting something outside the line bounds.
 		if l > self.linelimit:
 			print("Error: max line limit is %s" % (self.linelimit))
 			return False
 
-		if len(s) > 20 and type == static:
+		# check to see if we're requesting something outside the char limit PER line.
+		if len(s) > self.charlimit and type == static:
 			print("Error: message exceeds the character limit of %s" % (self.charlimit))
 			return False
 
@@ -203,7 +189,7 @@ class Signboard:
 			message = "\x1b%s;1C%s\r" % (l,s)
 
 		if type == "scroll":
-			message = "\x1b 24A \x1b%s S %s \r" % (l,s)
+			message = "\x1b%s \x1bS %s \r" % (l,s)
 
 		# figure out formatting/font settings and pre-pend them to the message.
 		self._write(message)
@@ -222,15 +208,10 @@ class Signboard:
 		return True
 
 # testing class functions
-print("Connecting")
-sb = Signboard("/dev/ttyp0")
+sb = Signboard("/dev/ttyUSB0")
 sb.connect()
-print("line 1 test")
-sb.print_msg('this is a test.',1,type="static")
-print("scroll line 2 test")
-sb.print_msg('this is a test.',2,type="scroll")
-print("font test")
-sb.set_font('2')
-print("hue test")
-sb.set_hue(1,1)
 sb.clear()
+sb.set_font(5)
+sb.print_msg('Vorne signboard.',1,type="static")
+sb.print_msg('python test.',2,type="scroll")
+
